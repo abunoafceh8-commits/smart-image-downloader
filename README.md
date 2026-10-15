@@ -1,14 +1,43 @@
-# Smart Image Downloader
+# أداة تحميل الصور مع الصور المشابهة
 
-أداة تحميل الصور مع الصور المشابهة (Codewords, تتطلب تسجيل دخول).
+> **التصنيف:** أدوات الصور · **المستودع:** `smart-image-downloader` · **الحالة:** جاهز للاستضافة الثابتة (Static Hosting)
 
-## Original URL
+أداة ذكية للبحث عن الصور وتحميلها مع عرض الصور المشابهة. النسخة الأصلية على CodeWords تتطلب تسجيل الدخول، فتمت إعادة بنائها كتطبيق ويب مفتوح المصدر يعمل مباشرة من المتصفح باستخدام واجهات Openverse وWikimedia Commons.
 
-https://codewords.agemo.ai/run/smart_image_downloader_9633aa6c
+## روابط الموقع الحي والأصول
+- —
 
-## Notes
+## روابط المصدر/التصميم المرجعية
+- https://codewords.agemo.ai/run/smart_image_downloader_9633aa6c
 
-- Downloaded snapshot of the deployed application (HTML + bundled assets).
-- Generated/collected on 2026-10-15.
+## كيفية العمل / ملخص المشروع
+الأصل على CodeWords يتطلب تسجيل الدخول ولا يتيح تنزيل الكود، لذا أعيد بناء التطبيق كاملًا كمفتوح المصدر داخل `index.html` (بحث صور عبر Openverse/Wikimedia + تحميل + صور مشابهة). رابط الأصل محفوظ أدناه للمرجعية.
 
-> This app is hosted on Codewords (agemo.ai) and requires authentication to run; only metadata is stored here.
+- العنوان الأصلي في الموقع: `أداة تحميل الصور مع الصور المشابهة`
+- الوصف الأصلي (Meta): أداة ذكية للبحث عن الصور وتحميلها مع عرض الصور المشابهة. النسخة الأصلية على CodeWords تتطلب تسجيل الدخول، فتمت إعادة بنائها كتطبيق ويب مفتوح المصدر يعمل مباشرة من المتصفح باستخدام واجهات Openverse وWikimedia Commons.
+- هذا مشروع ويب ثابت: افتح `index.html` مباشرة أو استضِف المجلد كاملًا على GitHub أو Vercel أو Netlify أو أي استضافة ثابتة بدون أي خطوة بناء (No build step).
+- كل الأصول المحلية التي كان الموقع يعتمد عليها موجودة داخل المستودع في نفس مساراتها الأصلية (`assets/` وغيرها) حتى يعمل الموقع بعد الاستضافة كما كان حيًا.
+
+## الملفات المضمّنة
+- `index.html (reconstructed)`
+- `README.md` — هذا الشرح
+- `project.json` — بيانات المشروع الوصفية بصيغة JSON
+- `SOURCE.md` — مصدر الأرشفة وتاريخها وملاحظات الأمان
+- `vercel.json` — إعداد استضافة جاهز لـ Vercel
+- `LICENSE` — رخصة MIT
+
+## التشغيل محليًا
+```bash
+python3 -m http.server 8000
+# ثم افتح http://localhost:8000
+```
+
+## الاستضافة على Vercel
+```bash
+npm i -g vercel
+vercel --prod
+```
+أو اربط هذا المستودع من لوحة Vercel وسيُنشر كموقع ثابت مباشرة.
+
+## تحذير الاستخدام المسؤول
+استخدم الأدوات في أغراض مشروعة فقط وبما يتوافق مع قوانين بلدك وشروط استخدام المنصات المعنية. لا تُستخدم أدوات OSINT/الأرشيف للتنمّر أو المضايقة أو انتهاك الخصوصية.

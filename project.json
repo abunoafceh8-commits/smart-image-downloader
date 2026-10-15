@@ -1,7 +1,19 @@
 {
-  "slug": "smart-image-downloader",
-  "url": "https://codewords.agemo.ai/run/smart_image_downloader_9633aa6c",
-  "title": "Smart Image Downloader",
-  "desc": "أداة تحميل الصور مع الصور المشابهة (Codewords, تتطلب تسجيل دخول).",
-  "auth": true
+  "name": "smart-image-downloader",
+  "title": "أداة تحميل الصور مع الصور المشابهة",
+  "category": "أدوات الصور",
+  "description": "أداة ذكية للبحث عن الصور وتحميلها مع عرض الصور المشابهة. النسخة الأصلية على CodeWords تتطلب تسجيل الدخول، فتمت إعادة بنائها كتطبيق ويب مفتوح المصدر يعمل مباشرة من المتصفح باستخدام واجهات Openverse وWikimedia Commons.",
+  "liveUrl": null,
+  "aliases": [],
+  "sourceLinks": [
+    "https://codewords.agemo.ai/run/smart_image_downloader_9633aa6c"
+  ],
+  "originalTitle": "أداة تحميل الصور مع الصور المشابهة",
+  "originalDescription": "أداة ذكية للبحث عن الصور وتحميلها مع عرض الصور المشابهة. النسخة الأصلية على CodeWords تتطلب تسجيل الدخول، فتمت إعادة بنائها كتطبيق ويب مفتوح المصدر يعمل مباشرة من المتصفح باستخدام واجهات Openverse وWikimedia Commons.",
+  "type": "static-website",
+  "archivedAt": "2026-10-15",
+  "readyForHosting": true,
+  "files": [
+    "index.html (reconstructed)"
+  ]
 }
