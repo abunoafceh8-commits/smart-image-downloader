@@ -1,22 +1,826 @@
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>أداة تحميل الصور مع الصور المشابهة</title><style>
-body{font-family:system-ui,'Segoe UI',Tahoma;background:#0b1120;color:#e5e7eb;margin:0}header{padding:28px;text-align:center;background:#111827}
-input,select,button{padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#fff}
-button{background:#2563eb;cursor:pointer} .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding:20px}
-.card{background:#111827;border-radius:14px;overflow:hidden} .card img{width:100%;height:160px;object-fit:cover} .card a{color:#93c5fd;font-size:13px}
-</style></head><body><header><h1>أداة تحميل الصور مع الصور المشابهة</h1><p>أداة ذكية للبحث عن الصور وتحميلها مع عرض الصور المشابهة. النسخة الأصلية على CodeWords تتطلب تسجيل الدخول، فتمت إعادة بنائها كتطبيق ويب مفتوح المصدر يعمل مباشرة من المتصفح باستخدام واجهات Openverse وWikimedia Commons.</p>
-<div><input id="q" placeholder="ابحث عن صور…" size="32"> <label id="xwrap" style="display:none"><input type="checkbox" id="onlyx"> Only X</label>
-<button onclick="search()">بحث وتحميل</button></div><p id="st"></p></header><main class="grid" id="g"></main>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مِصوَر ذكي — بحث الصور والصور المشابهة</title>
+<meta name="description" content="بحث الصور والصور المشابهة — بحث عميق عن الصور من مصادر المحتوى المفتوح، تصفية بالجودة والترخيص، تحميل جماعي وتصدير ZIP. أداة من فريق أبو نواف (هكر أخلاقي).">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root{
+    --bg:#060a12;--bg2:#0a1220;--panel:#0d1727;--panel2:#111e30;--line:rgba(148,197,222,.15);
+    --teal:#22d3ee;--teal2:#34d399;--gold:#f5c451;--ink:#e9f3fa;--muted:#8aa3b8;--danger:#fb7185;
+    --radius:16px;--font:'TajawalX','Tajawal',system-ui,'Segoe UI',Tahoma,sans-serif;
+  }
+  @font-face{font-family:'TajawalX';font-weight:400;font-display:swap;src:url('assets/abunawaf/fonts/tajawal-400-arabic.woff2') format('woff2')}
+  @font-face{font-family:'TajawalX';font-weight:500;font-display:swap;src:url('assets/abunawaf/fonts/tajawal-500-arabic.woff2') format('woff2')}
+  @font-face{font-family:'TajawalX';font-weight:700;font-display:swap;src:url('assets/abunawaf/fonts/tajawal-700-arabic.woff2') format('woff2')}
+  @font-face{font-family:'TajawalX';font-weight:800;font-display:swap;src:url('assets/abunawaf/fonts/tajawal-800-arabic.woff2') format('woff2')}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:
+      radial-gradient(1100px 520px at 90% -10%,rgba(34,211,238,.09),transparent 62%),
+      radial-gradient(900px 440px at 5% 108%,rgba(245,196,81,.06),transparent 62%),
+      var(--bg);color:var(--ink);font-family:var(--font);line-height:1.65;min-height:100vh}
+  a{color:var(--teal);text-decoration:none}
+  button,input,select{font-family:inherit;color:inherit}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 clamp(14px,3vw,28px)}
+  .hero{padding:38px 0 20px;text-align:center}
+  .badge{display:inline-flex;align-items:center;gap:8px;padding:5px 13px;border-radius:999px;border:1px solid var(--line);background:rgba(34,211,238,.07);color:#bfeafe;font-size:11.5px;font-weight:700;margin-bottom:14px}
+  h1{margin:0 0 10px;font-size:clamp(24px,4.4vw,40px);font-weight:800;letter-spacing:-.4px;line-height:1.25}
+  .grad{background:linear-gradient(90deg,var(--teal2),var(--teal) 45%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{max-width:70ch;margin:0 auto;color:var(--muted);font-size:14px}
+  .stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .stat{min-width:104px;padding:10px 14px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.025)}
+  .stat b{display:block;font-size:19px;color:#fff;line-height:1.2}
+  .stat span{font-size:10.5px;color:var(--muted)}
+
+  .searchbox{margin:26px auto 0;max-width:940px;padding:16px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));box-shadow:0 20px 60px rgba(0,0,0,.36);backdrop-filter:blur(8px)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .grow{flex:1 1 320px;display:flex;align-items:center;gap:10px;padding:4px 14px;border-radius:13px;border:1px solid var(--line);background:rgba(4,9,16,.62)}
+  .grow:focus-within{border-color:rgba(34,211,238,.55);box-shadow:0 0 0 4px rgba(34,211,238,.1)}
+  .grow input{flex:1;padding:12px 0;border:0;background:transparent;outline:none;font-size:14.5px}
+  .grow svg{flex:0 0 auto;opacity:.65}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:13px;border:1px solid transparent;font-weight:800;font-size:13.5px;cursor:pointer;transition:.18s;white-space:nowrap}
+  .btn-primary{background:linear-gradient(135deg,#12b4c9,#0b8ea3);color:#02131b;box-shadow:0 10px 26px rgba(34,211,238,.22)}
+  .btn-primary:hover{transform:translateY(-1px);filter:brightness(1.07)}
+  .btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line);color:var(--ink)}
+  .btn-ghost:hover{border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.09)}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+  fieldset{margin:0;padding:0;border:0}
+  label.fl{display:block;font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:4px}
+  select,.inp{width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:rgba(4,9,16,.62);font-size:12.5px;outline:none}
+  select:focus,.inp:focus{border-color:rgba(34,211,238,.5)}
+  .srcs{display:flex;flex-wrap:wrap;gap:5px}
+  .src-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:9px;border:1px solid var(--line);background:rgba(4,9,16,.5);font-size:10.5px;font-weight:700;cursor:pointer;transition:.15s;user-select:none}
+  .src-chip:has(input:checked){border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.12);color:#dffaff}
+  .src-chip input{accent-color:#22d3ee;width:12px;height:12px;margin:0}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;justify-content:center}
+  .chip{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:11.5px;font-weight:700;cursor:pointer;transition:.16s}
+  .chip:hover,.chip.on{background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.45);color:#e8fbff}
+
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:24px 0 12px}
+  .toolbar h2{margin:0;font-size:16px;font-weight:800}
+  .toolbar .sp{flex:1}
+  .pill{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11px;font-weight:700;color:var(--muted)}
+  .pill b{color:var(--gold)}
+  .iconbtn{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.03);cursor:pointer;transition:.16s}
+  .iconbtn:hover{border-color:rgba(34,211,238,.45);background:rgba(34,211,238,.1)}
+  .iconbtn.on{background:rgba(34,211,238,.16);border-color:rgba(34,211,238,.55)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:13px;padding-bottom:20px}
+  .card{position:relative;border-radius:15px;overflow:hidden;border:1px solid var(--line);background:var(--panel);transition:.2s}
+  .card:hover{transform:translateY(-3px);border-color:rgba(34,211,238,.4);box-shadow:0 16px 38px rgba(0,0,0,.45)}
+  .card.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(245,196,81,.5),0 16px 38px rgba(0,0,0,.45)}
+  .ph{position:relative;aspect-ratio:4/3;background:linear-gradient(135deg,#0e1a2b,#0a1220);overflow:hidden}
+  .ph img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s}
+  .ph img.loaded{opacity:1}
+  .ph .skel{position:absolute;inset:0;background:linear-gradient(100deg,#0d1726 30%,#122033 50%,#0d1726 70%);background-size:220% 100%;animation:sk 1.4s infinite}
+  @keyframes sk{0%{background-position:120% 0}100%{background-position:-120% 0}}
+  .ph .skel.hide{display:none}
+  .badges{position:absolute;top:8px;inset-inline-start:8px;display:flex;gap:5px;flex-wrap:wrap;max-width:calc(100% - 16px)}
+  .badge-sm{padding:2px 7px;border-radius:7px;font-size:9.5px;font-weight:800;background:rgba(4,9,16,.78);border:1px solid var(--line);color:#cfe6f5;backdrop-filter:blur(6px)}
+  .badge-sm.g{color:#7ff0c2;border-color:rgba(52,211,153,.4)}
+  .badge-sm.x{color:#ffd27a;border-color:rgba(245,196,81,.4)}
+  .pick{position:absolute;top:8px;inset-inline-end:8px;width:28px;height:28px;border-radius:9px;border:1px solid rgba(255,255,255,.35);background:rgba(4,9,16,.6);display:grid;place-items:center;cursor:pointer;color:#fff;font-size:13px;opacity:0;transition:.16s}
+  .card:hover .pick,.card.sel .pick{opacity:1}
+  .card.sel .pick{background:var(--gold);color:#1a1205;border-color:var(--gold)}
+  .meta{padding:9px 11px 11px}
+  .meta .t{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dcecf7}
+  .meta .d{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:10px;color:var(--muted)}
+  .meta .acts{display:flex;gap:5px;margin-top:8px}
+  .mini{flex:1;padding:5px 7px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:10px;font-weight:700;cursor:pointer;transition:.15s;text-align:center}
+  .mini:hover{background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.4)}
+
+  .empty{text-align:center;padding:54px 20px;color:var(--muted)}
+  .empty .ico{font-size:42px;opacity:.5;margin-bottom:8px}
+  .skeleton-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:13px}
+  .sk-card{height:232px;border-radius:15px;border:1px solid var(--line);background:linear-gradient(100deg,#0b1422 30%,#101d2f 50%,#0b1422 70%);background-size:220% 100%;animation:sk 1.5s infinite}
+
+  .selbar{position:fixed;inset-inline:0;bottom:0;z-index:60;background:rgba(8,14,23,.96);border-top:1px solid rgba(245,196,81,.3);backdrop-filter:blur(14px);transform:translateY(105%);opacity:0;visibility:hidden;transition:transform .25s cubic-bezier(.2,.8,.2,1),opacity .2s,visibility .2s;padding:12px clamp(14px,3vw,28px)}
+  .selbar.show{transform:none;opacity:1;visibility:visible}
+  .selbar .in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .selbar b{color:var(--gold);font-size:15px}
+  .prog{height:6px;border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden;flex:1 1 160px;min-width:120px}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal2),var(--teal),var(--gold));transition:width .25s}
+
+  .lightbox{position:fixed;inset:0;z-index:100;background:rgba(3,7,12,.94);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:16px}
+  .lightbox.open{display:flex}
+  .lb-in{max-width:min(1100px,96vw);max-height:94vh;display:grid;gap:12px}
+  .lb-img{max-width:100%;max-height:76vh;object-fit:contain;border-radius:14px;border:1px solid var(--line);background:#04070c}
+  .lb-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .lb-close{position:fixed;top:14px;inset-inline-end:14px;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:rgba(10,18,30,.9);color:#fff;font-size:20px;cursor:pointer}
+  .lb-nav{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(10,18,30,.9);color:#fff;font-size:20px;cursor:pointer}
+  .lb-nav.prev{inset-inline-start:12px}.lb-nav.next{inset-inline-end:12px}
+
+  .toast-host{position:fixed;bottom:18px;inset-inline:0;display:grid;justify-items:center;gap:8px;z-index:120;pointer-events:none}
+  .toast{padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(10,18,30,.97);font-size:12px;font-weight:700;display:flex;gap:8px;align-items:center;animation:tin .22s ease-out;pointer-events:auto}
+  .toast.ok{border-color:rgba(52,211,153,.45)}.toast.err{border-color:rgba(251,113,133,.5)}
+  @keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .panel-box{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));padding:18px;margin-top:16px}
+  .panel-box h3{margin:0 0 10px;font-size:14px}
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:26px}
+  .feat article{padding:15px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.022)}
+  .feat h4{margin:0 0 5px;font-size:12.5px}
+  .feat p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.75}
+  .history{display:flex;gap:6px;flex-wrap:wrap}
+  .hchip{padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11px;cursor:pointer}
+  .hchip:hover{border-color:rgba(34,211,238,.4)}
+  @media(max-width:600px){.hero{padding-top:24px}.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}.meta .acts{flex-wrap:wrap}}
+  @media print{.searchbox,.toolbar,.selbar,.toast-host,.feat,.panel-box{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <span class="badge">✦ أداة ذكية · الإصدار المعزّز 3.0</span>
+    <h1>مِصوَر ذكي — <span class="grad">بحث الصور والصور المشابهة</span></h1>
+    <p class="sub">بحث في أكثر من مصدر للمحتوى المفتوح، تصفية دقيقة بالجودة والترخيص والأبعاد، تحديد متعدد، وتنزيل جماعي مُجمّع في ملف ZIP — كل ذلك داخل متصفحك بلا خوادم ولا تتبّع.</p>
+    <div class="stats">
+      <div class="stat"><b id="st-total">0</b><span>نتيجة</span></div>
+      <div class="stat"><b id="st-sel">0</b><span>مُحدّدة</span></div>
+      <div class="stat"><b id="st-src">4</b><span>مصادر</span></div>
+      <div class="stat"><b id="st-time">—</b><span>زمن البحث</span></div>
+    </div>
+
+    <form class="searchbox" id="form" autocomplete="off">
+      <div class="row">
+        <div class="grow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="ابحث عن صور: قطة، القدس، شعار، طبيعة…" aria-label="كلمة البحث" required>
+        </div>
+        <button class="btn btn-primary" id="go" type="submit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+          بحث وتحميل
+        </button>
+      </div>
+      <div class="filters">
+        <fieldset><label class="fl">المصادر</label>
+          <div class="srcs">
+            <label class="src-chip"><input type="checkbox" value="wikimedia" checked> Wikimedia</label>
+            <label class="src-chip"><input type="checkbox" value="artic" checked> Art Institute</label>
+            <label class="src-chip"><input type="checkbox" value="nasa" checked> NASA</label>
+            <label class="src-chip"><input type="checkbox" value="loc" checked> LOC</label>
+            <label class="src-chip" title="يتطلب مفتاح Openverse"><input type="checkbox" value="openverse"> Openverse</label>
+          </div>
+        </fieldset>
+        <fieldset><label class="fl" for="minw">أدنى عرض</label>
+          <select id="minw"><option value="0">بدون حد</option><option value="600">600px+</option><option value="1024" selected>1024px+</option><option value="1920">1920px+</option><option value="2560">2560px+</option></select>
+        </fieldset>
+        <fieldset><label class="fl" for="lic">الترخيص</label>
+          <select id="lic"><option value="">كل التراخيص</option><option value="cc0">CC0 / ملكية عامة</option><option value="by">CC BY (نسب)</option><option value="by-sa">CC BY-SA</option><option value="nc">غير تجاري</option></select>
+        </fieldset>
+        <fieldset><label class="fl" for="sort">الترتيب</label>
+          <select id="sort"><option value="relevance">الصلة</option><option value="size">الأكبر دقة</option><option value="new">الأحدث</option><option value="random">عشوائي</option></select>
+        </fieldset>
+        <fieldset><label class="fl" for="count">عدد النتائج</label>
+          <select id="count"><option>24</option><option selected>48</option><option>96</option><option>150</option></select>
+        </fieldset>
+      </div>
+      <div class="chips" id="presets">
+        <button type="button" class="chip" data-q="القدس القديمة">القدس القديمة</button>
+        <button type="button" class="chip" data-q="خط عربي فن">خط عربي</button>
+        <button type="button" class="chip" data-q="صحراء السعودية">صحراء</button>
+        <button type="button" class="chip" data-q="brutalist architecture">عمارة</button>
+        <button type="button" class="chip" data-q="cybersecurity hacker">أمن سيبراني</button>
+        <button type="button" class="chip" data-q="vintage map">خرائط قديمة</button>
+      </div>
+    </form>
+
+    <div class="chips" style="margin-top:12px">
+      <label class="chip" style="cursor:pointer"><input type="checkbox" id="onlyx" style="margin-inline-end:6px;vertical-align:-2px"> فقط صور X / Twitter</label>
+      <label class="chip" style="cursor:pointer"><input type="checkbox" id="safe" checked style="margin-inline-end:6px;vertical-align:-2px"> محتوى آمن</label>
+      <label class="chip" style="cursor:pointer"><input type="checkbox" id="noai" style="margin-inline-end:6px;vertical-align:-2px"> استبعاد المولّد بالذكاء الاصطناعي</label>
+    </div>
+  </header>
+
+  <section aria-label="النتائج">
+    <div class="toolbar">
+      <h2 id="res-title">النتائج</h2>
+      <span class="pill" id="pill-src">جاهز</span>
+      <span class="sp"></span>
+      <button class="iconbtn" id="sel-all" title="تحديد الكل (A)" aria-label="تحديد الكل">☑</button>
+      <button class="iconbtn" id="clear-sel" title="إلغاء التحديد (Esc)" aria-label="إلغاء التحديد">✕</button>
+      <button class="btn btn-ghost" id="zip" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        تنزيل ZIP
+      </button>
+    </div>
+    <div id="results"></div>
+  </section>
+
+  <div class="feat">
+    <article><h4>◈ بحث متعدد المصادر</h4><p>يجمع النتائج من Openverse وWikimedia Commons في مسار واحد، ويزيل التكرار تلقائيًا، ويرتّبها حسب الجودة أو الصلة.</p></article>
+    <article><h4>◈ تصدير ZIP بلا خادم</h4><p>يُنشئ ملف ZIP داخل متصفحك (كاتب ZIP أصلي بدون مكتبات) — لا تُرفع صورك إلى أي خادم.</p></article>
+    <article><h4>◈ تصفية بالترخيص والدقة</h4><p>اعرف حقوق كل صورة قبل استخدامها: CC0، CC BY، CC BY-SA، أو غير تجاري — مع حدّ أدنى للأبعاد.</p></article>
+    <article><h4>◈ صور مشابهة فورية</h4><p>نقرة واحدة لفتح البحث العكسي في Google Lens وTinEye لكل صورة تُريد التحقق من مصدرها.</p></article>
+    <article><h4>◈ سجل ومفضلة محليان</h4><p>آخر عمليات البحث والمفضلة تبقى في جهازك فقط (localStorage) — بلا حسابات ولا تتبّع.</p></article>
+    <article><h4>◈ وصولية كاملة</h4><p>تنقّل بلوحة المفاتيح، ARIA، تباين عالٍ، واحترام تفضيل تقليل الحركة.</p></article>
+  </div>
+
+  <div class="panel-box" id="hist-box" hidden>
+    <h3>آخر عمليات البحث</h3>
+    <div class="history" id="hist"></div>
+  </div>
+
+  <div class="panel-box">
+    <h3>ملاحظة استخدام مسؤول</h3>
+    <p class="sub" style="margin:0;text-align:start;font-size:12px">تُعرض هنا صور من مصادر المحتوى المفتوح فقط، ويُرجى احترام ترخيص كل صورة ونسبها إلى مؤلفها. لا تستخدم الأداة لإعادة نشر محتوى محمي أو لمضايقة الأفراد.</p>
+  </div>
+</div>
+
+<div class="selbar" id="selbar" role="region" aria-label="شريط التحديد">
+  <div class="in">
+    <b id="sel-n">0</b><span style="font-size:12px;color:var(--muted)">صورة محددة</span>
+    <div class="prog"><i id="prog"></i></div>
+    <span id="prog-t" style="font-size:11px;color:var(--muted);min-width:74px">0 / 0</span>
+    <button class="btn btn-primary" id="dl-sel">تنزيل المحدد</button>
+    <button class="btn btn-ghost" id="zip-sel">ZIP</button>
+    <button class="btn btn-ghost" id="sel-cancel">إلغاء</button>
+  </div>
+</div>
+
+<div class="lightbox" id="lb" role="dialog" aria-modal="true" aria-label="عرض الصورة">
+  <button class="lb-close" id="lb-close" aria-label="إغلاق">✕</button>
+  <button class="lb-nav prev" id="lb-prev" aria-label="السابق">‹</button>
+  <button class="lb-nav next" id="lb-next" aria-label="التالي">›</button>
+  <div class="lb-in">
+    <img class="lb-img" id="lb-img" alt="">
+    <div class="lb-bar">
+      <a class="btn btn-primary" id="lb-dl" download>تنزيل الأصل</a>
+      <a class="btn btn-ghost" id="lb-lens" target="_blank" rel="noopener noreferrer">صور مشابهة</a>
+      <a class="btn btn-ghost" id="lb-tineye" target="_blank" rel="noopener noreferrer">TinEye</a>
+      <button class="btn btn-ghost" id="lb-copy">نسخ الرابط</button>
+      <span class="pill" id="lb-meta"></span>
+    </div>
+  </div>
+</div>
+
+<div class="toast-host" id="toasts" role="status" aria-live="polite"></div>
+
 <script>
-async function search(){const q=document.getElementById('q').value.trim(); if(!q) return;
- const onlyx=document.getElementById('onlyx') && document.getElementById('onlyx').checked;
- const g=document.getElementById('g'); g.innerHTML=''; document.getElementById('st').textContent='جارٍ البحث…';
- let items=[];
- try{ const r=await fetch('https://api.openverse.org/v1/images/?q='+encodeURIComponent(q)+'&page_size=40'); const j=await r.json(); items=j.results.map(x=>({url:x.url,thumb:x.thumbnail||x.url,title:x.title||q,source:'Openverse'})); }catch(e){}
- if(items.length===0){ try{ const r=await fetch('https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent(q)+'&gsrnamespace=6&prop=imageinfo&iiprop=url&iiurlwidth=400&gsrlimit=40&format=json&origin=*'); const j=await r.json(); items=Object.values(j.query.pages||{}).map(p=>({url:p.imageinfo[0].url,thumb:p.imageinfo[0].thumburl,title:p.title,source:'Wikimedia'})); }catch(e){} }
- if(onlyx) items=items.filter(x=>/x\.com|twitter/i.test(x.url+x.source));
- document.getElementById('st').textContent='النتائج: '+items.length+(onlyx?' (Only X)':'');
- items.forEach(x=>{const d=document.createElement('div');d.className='card';d.innerHTML='<img loading="lazy" src="'+x.thumb+'"><div style="padding:10px"><div>'+x.title.slice(0,60)+'</div><a href="'+x.url+'" target="_blank" download>تحميل</a> · <a href="https://www.google.com/searchbyimage?image_url='+encodeURIComponent(x.url)+'" target="_blank">صور مشابهة</a></div>';g.appendChild(d);});
-}
-</script></body></html>
+(() => {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const state = { items: [], sel: new Set(), open: -1, query: '', source: 'all', controller: null };
+
+  /* ---------------- helpers ---------------- */
+  const toast = (msg, type = '', ms = 3200) => {
+    const h = $('#toasts');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = `<span>${type === 'ok' ? '✓' : type === 'err' ? '!' : 'ℹ'}</span><span>${msg}</span>`;
+    h.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = '.3s'; setTimeout(() => t.remove(), 320); }, ms);
+  };
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('miswar:' + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('miswar:' + k, JSON.stringify(v)); } catch {} }
+  };
+  const fmtBytes = (n) => !n ? '' : n > 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.round(n / 1024) + 'KB';
+  const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
+  const filename = (u, i) => {
+    try {
+      const p = new URL(u).pathname.split('/').pop() || 'image';
+      return (p.includes('.') ? p : p + '.jpg').replace(/[^\w.\-]+/g, '_').slice(-80) || `image-${i}.jpg`;
+    } catch { return `image-${i}.jpg`; }
+  };
+
+  /* ---------------- source adapters ---------------- */
+  const IMG_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+  const extOf = (u) => { try { return new URL(u, location.href).pathname.split('.').pop().toLowerCase(); } catch { return ''; } };
+  const cleanUrl = (u) => {
+    try { const x = new URL(u); x.search = ''; return x.href; } catch { return u; }
+  };
+  const cleanTitle = (t) => String(t || '').replace(/<[^>]+>/g, '').replace(/^File:/, '').replace(/\s+/g, ' ').trim();
+
+  const SOURCES = {
+    wikimedia: {
+      label: 'Wikimedia', pool: 'open',
+      async fetch(q, n) {
+        const limit = Math.min(50, n);
+        const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent('filetype:bitmap ' + q)}&gsrnamespace=6&gsrlimit=${limit}&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=480&format=json&origin=*`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('wikimedia ' + r.status);
+        const j = await r.json();
+        return Object.values(j.query?.pages || {}).map((p) => {
+          const ii = p.imageinfo?.[0] || {};
+          const md = ii.extmetadata || {};
+          const full = cleanUrl(ii.url || '');
+          const thumb = cleanUrl(ii.thumburl || ii.url || '');
+          return {
+            id: 'wm-' + p.pageid,
+            title: cleanTitle(p.title).replace(/\.[a-z0-9]+$/i, ''),
+            url: full,
+            thumb: thumb || full,
+            width: ii.width || 0,
+            height: ii.height || 0,
+            bytes: ii.size || 0,
+            source: 'Wikimedia',
+            license: String(md.LicenseShortName?.value || '').toLowerCase().replace(/\s+/g, '-'),
+            creator: cleanTitle(md.Artist?.value || '').slice(0, 60),
+            page: ii.descriptionurl || full,
+            tags: []
+          };
+        }).filter((x) => x.url && IMG_EXT.includes(extOf(x.url)));
+      }
+    },
+    artic: {
+      label: 'Art Institute', pool: 'open',
+      async fetch(q, n) {
+        const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(q)}&fields=id,title,image_id,artist_display,date_display,is_public_domain&limit=${Math.min(50, n)}`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('artic ' + r.status);
+        const j = await r.json();
+        return (j.data || []).filter((x) => x.image_id).map((x) => {
+          const base = `https://www.artic.edu/iiif/2/${x.image_id}/full`;
+          return {
+            id: 'aic-' + x.id,
+            title: cleanTitle(x.title) || 'عمل فني',
+            url: `${base}/1686,/0/default.jpg`,
+            thumb: `${base}/400,/0/default.jpg`,
+            width: 1686, height: 0,
+            source: 'Art Institute',
+            license: x.is_public_domain ? 'public-domain' : 'art-institute',
+            creator: cleanTitle(x.artist_display || '').split('\n')[0].slice(0, 60),
+            page: `https://www.artic.edu/artworks/${x.id}`,
+            tags: [x.date_display || '']
+          };
+        });
+      }
+    },
+    nasa: {
+      label: 'NASA', pool: 'open',
+      async fetch(q, n) {
+        const r = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(q)}&media_type=image&page_size=${Math.min(100, n)}`);
+        if (!r.ok) throw new Error('nasa ' + r.status);
+        const j = await r.json();
+        return (j.collection?.items || []).filter((x) => x.links?.[0]?.href).map((x, i) => {
+          const d = x.data?.[0] || {};
+          return {
+            id: 'nasa-' + (d.nasa_id || i),
+            title: cleanTitle(d.title) || 'NASA',
+            url: x.links[0].href,
+            thumb: x.links[0].href,
+            width: 0, height: 0,
+            source: 'NASA',
+            license: 'public-domain',
+            creator: cleanTitle(d.center || 'NASA'),
+            page: `https://images.nasa.gov/details/${d.nasa_id || ''}`,
+            tags: [d.date_created ? d.date_created.slice(0, 10) : ''].filter(Boolean)
+          };
+        });
+      }
+    },
+    loc: {
+      label: 'Library of Congress', pool: 'open',
+      async fetch(q, n) {
+        const r = await fetch(`https://www.loc.gov/photos/?q=${encodeURIComponent(q)}&fo=json&c=${Math.min(50, n)}`);
+        if (!r.ok) throw new Error('loc ' + r.status);
+        const j = await r.json();
+        return (j.results || []).map((x, i) => {
+          const img = Array.isArray(x.image_url) ? x.image_url[0] : x.image_url;
+          if (!img) return null;
+          const small = img.replace(/\/\d+\.(jpe?g|png|gif)$/i, '/480.$1');
+          return {
+            id: 'loc-' + (x.id || i),
+            title: cleanTitle(Array.isArray(x.title) ? x.title[0] : x.title) || 'Library of Congress',
+            url: img,
+            thumb: small,
+            width: 0, height: 0,
+            source: 'LOC',
+            license: 'public-domain',
+            creator: 'Library of Congress',
+            page: x.id ? `https://www.loc.gov/item/${x.id}/` : img,
+            tags: [].concat(x.date || []).slice(0, 1)
+          };
+        }).filter(Boolean).filter((x) => x.url && IMG_EXT.includes(extOf(x.url)));
+      }
+    },
+    openverse: {
+      label: 'Openverse', pool: 'key',
+      async fetch(q, n) {
+        const token = document.querySelector('meta[name="openverse:token"]')?.content || '';
+        const r = await fetch(`https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&page_size=${Math.min(100, n)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (!r.ok) throw new Error('openverse يتطلب مفتاح وصول (401)');
+        const j = await r.json();
+        return (j.results || []).map((x) => ({
+          id: 'ov-' + (x.id || x.url),
+          title: cleanTitle(x.title) || q,
+          url: x.url, thumb: x.thumbnail || x.url,
+          width: x.width || 0, height: x.height || 0,
+          source: 'Openverse',
+          license: String(x.license || '').toLowerCase(),
+          creator: cleanTitle(x.creator || ''),
+          page: x.foreign_landing_url || x.url,
+          tags: []
+        }));
+      }
+    }
+  };
+
+  function dedupe(items) {
+    const seen = new Set();
+    return items.filter((x) => {
+      const k = (x.url || '').replace(/^https?:\/\//, '').replace(/[?#].*$/, '').toLowerCase();
+      if (!k || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+  const activeSources = () => $$('.src-chip input:checked').map((i) => i.value);
+  state.errors = [];
+
+  async function runSearch(q) {
+    q = (q || '').trim();
+    if (!q) return;
+    const t0 = performance.now();
+    const count = +$('#count').value || 48;
+    const chosen = activeSources();
+    if (!chosen.length) { toast('اختر مصدرًا واحدًا على الأقل', 'err'); return; }
+    state.query = q;
+    state.sel.clear();
+    updateSelUI();
+    state.errors = [];
+    $('#results').innerHTML = '<div class="skeleton-grid">' + '<div class="sk-card"></div>'.repeat(8) + '</div>';
+    $('#go').disabled = true;
+    $('#pill-src').textContent = 'جارٍ البحث في ' + chosen.length + ' مصادر…';
+    $('#res-title').textContent = 'نتائج «' + q + '»';
+
+    const apiMode = new URLSearchParams(location.search).get('api') !== '0';
+    let items = [];
+    let usedServer = false;
+
+    if (apiMode) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 12000);
+        const r = await fetch(`/api/search?q=${encodeURIComponent(q)}&count=${count}&sources=${chosen.join(',')}`, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (r.ok) {
+          const j = await r.json();
+          if (Array.isArray(j.items) && j.items.length) { items = j.items; usedServer = true; }
+        }
+      } catch { /* fall back to direct */ }
+    }
+
+    if (!usedServer) {
+      const results = await Promise.all(chosen.map(async (s) => {
+        try { return await SOURCES[s].fetch(q, count); }
+        catch (e) { state.errors.push(s + ': ' + e.message); return []; }
+      }));
+      items = dedupe(results.flat());
+    }
+
+    state.raw = items;
+    state.items = applyFilters(items);
+    state.items.forEach((x) => { if (!x.original) x.original = true; });
+
+    $('#st-total').textContent = state.items.length;
+    $('#st-time').textContent = Math.round(performance.now() - t0) + 'ms';
+    $('#st-src').textContent = chosen.length;
+    $('#pill-src').textContent = items.length + ' نتيجة · ' + state.items.length + ' بعد التصفية' + (usedServer ? ' · خادم' : ' · مباشر');
+    $('#go').disabled = false;
+    if (state.errors.length) toast('بعض المصادر غير متاحة — ' + state.errors.slice(0, 2).join(' · '), 'err', 5200);
+    render();
+    pushHistory(q);
+  }
+
+  function async_() {}
+
+  /* filter engine (works on the raw set, so toggles are reversible) */
+  function applyFilters(items) {
+    const minw = +$('#minw').value || 0;
+    const lic = $('#lic').value;
+    const onlyx = $('#onlyx').checked;
+    const safe = $('#safe').checked;
+    const noai = $('#noai').checked;
+    const out = items.filter((x) => {
+      if (minw && x.width && x.width < minw) return false;
+      if (lic && !(x.license || '').includes(lic)) return false;
+      if (onlyx && !/x\.com|twitter|twimg/i.test(x.url + ' ' + (x.page || '') + ' ' + x.source)) return false;
+      if (noai && /ai[- ]|midjourney|stable ?diffusion|dall ?e|generated/i.test(x.title + ' ' + (x.tags || []).join(' '))) return false;
+      if (safe && /nsfw|porn|explicit|nude/i.test(x.title + ' ' + (x.tags || []).join(' '))) return false;
+      return true;
+    });
+    const sort = $('#sort').value;
+    if (sort === 'size') out.sort((a, b) => (b.width * (b.height || 1)) - (a.width * (a.height || 1)));
+    else if (sort === 'new') out.sort((a, b) => String(b.tags?.[0] || '').localeCompare(String(a.tags?.[0] || '')));
+    else if (sort === 'random') out.sort(() => Math.random() - 0.5);
+    return out;
+  }
+
+  /* ---------------- render ---------------- */
+  function render() {
+    const box = $('#results');
+    if (!state.items.length) {
+      box.innerHTML = `<div class="empty"><div class="ico">🖼</div><h3>لا نتائج مطابقة</h3>
+        <p class="sub" style="margin-top:6px">جرّب كلمة أبسط، أو خفّف الفلاتر (الدقة/الترخيص)، أو ابحث بالإنجليزية.</p></div>`;
+      return;
+    }
+    box.innerHTML = '<div class="grid" id="grid"></div>';
+    const grid = $('#grid');
+    const frag = document.createDocumentFragment();
+    state.items.forEach((it, i) => {
+      const card = document.createElement('article');
+      card.className = 'card' + (state.sel.has(it.id) ? ' sel' : '');
+      card.dataset.i = i;
+      const lic = (it.license || 'مفتوح').replace(/-/g, ' ').slice(0, 18);
+      const isX = /twimg|x\.com|twitter/i.test(it.url + it.source);
+      card.innerHTML = `
+        <div class="ph">
+          <div class="skel"></div>
+          <img loading="lazy" decoding="async" alt="${escapeAttr(it.title || 'صورة')}" src="${escapeAttr(it.thumb || it.url)}">
+          <div class="badges">
+            <span class="badge-sm">${escapeHtml(it.source)}</span>
+            ${it.width ? `<span class="badge-sm g">${it.width}×${it.height}</span>` : ''}
+            <span class="badge-sm x">${escapeHtml(lic)}</span>
+            ${isX ? '<span class="badge-sm">X</span>' : ''}
+          </div>
+          <button class="pick" aria-label="تحديد الصورة" title="تحديد">${state.sel.has(it.id) ? '✓' : '+'}</button>
+        </div>
+        <div class="meta">
+          <div class="t" title="${escapeAttr(it.title || '')}">${escapeHtml(it.title || 'بدون عنوان')}</div>
+          <div class="d"><span>${escapeHtml(host(it.url))}</span>${it.creator ? ' · ' + escapeHtml(it.creator) : ''}</div>
+          <div class="acts">
+            <button class="mini" data-act="download">تنزيل</button>
+            <button class="mini" data-act="similar">مشابه</button>
+            <button class="mini" data-act="open">المصدر</button>
+          </div>
+        </div>`;
+      const img = card.querySelector('img');
+      img.addEventListener('load', () => { img.classList.add('loaded'); card.querySelector('.skel')?.classList.add('hide'); });
+      img.addEventListener('error', () => { card.querySelector('.skel')?.classList.add('hide'); img.style.display = 'none'; });
+      frag.appendChild(card);
+    });
+    grid.appendChild(frag);
+
+    grid.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      if (!card) return;
+      const it = state.items[+card.dataset.i];
+      if (e.target.closest('.pick')) { toggleSel(it.id, card); return; }
+      const act = e.target.closest('[data-act]')?.dataset.act;
+      if (act === 'download') { downloadOne(it); return; }
+      if (act === 'similar') { window.open('https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(it.url), '_blank', 'noopener'); return; }
+      if (act === 'open') { window.open(it.page || it.url, '_blank', 'noopener'); return; }
+      openLightbox(+card.dataset.i);
+    });
+  }
+
+  const escapeHtml = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const escapeAttr = escapeHtml;
+
+  /* ---------------- selection ---------------- */
+  function toggleSel(id, card) {
+    if (state.sel.has(id)) state.sel.delete(id); else state.sel.add(id);
+    card?.classList.toggle('sel', state.sel.has(id));
+    const btn = card?.querySelector('.pick');
+    if (btn) btn.textContent = state.sel.has(id) ? '✓' : '+';
+    updateSelUI();
+  }
+  function updateSelUI() {
+    const n = state.sel.size;
+    $('#st-sel').textContent = n;
+    $('#sel-n').textContent = n;
+    $('#selbar').classList.toggle('show', n > 0);
+    $('#zip').disabled = n === 0;
+  }
+
+  /* ---------------- downloading ---------------- */
+  async function fetchBlob(url) {
+    const r = await fetch(url, { mode: 'cors' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.blob();
+  }
+  function saveBlob(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+  }
+  async function downloadOne(it, idx = 0) {
+    try {
+      toast('جارٍ تنزيل: ' + (it.title || '').slice(0, 40) + '…');
+      const b = await fetchBlob(it.url);
+      saveBlob(b, filename(it.url, idx));
+      toast('تم التنزيل', 'ok');
+    } catch (e) {
+      toast('تعذّر التنزيل مباشرة — فُتح المصدر في تبويب جديد', 'err');
+      window.open(it.url, '_blank', 'noopener');
+    }
+  }
+
+  /* ---------------- minimal ZIP writer (store, no deps) ---------------- */
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(buf) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function makeZip(files) {
+    const enc = new TextEncoder();
+    const chunks = [];
+    const central = [];
+    let offset = 0;
+    const now = new Date();
+    const time = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+    const date = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+    files.forEach((f, i) => {
+      const name = enc.encode(f.name);
+      const data = f.data;
+      const crc = crc32(data);
+      const local = new Uint8Array(30 + name.length);
+      const dv = new DataView(local.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 0, true);
+      dv.setUint16(8, 0, true);
+      dv.setUint16(10, time, true);
+      dv.setUint16(12, date, true);
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true);
+      dv.setUint32(22, data.length, true);
+      dv.setUint16(26, name.length, true);
+      dv.setUint16(28, 0, true);
+      local.set(name, 30);
+      chunks.push(local, data);
+      const cd = new Uint8Array(46 + name.length);
+      const cv = new DataView(cd.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, time, true);
+      cv.setUint16(14, date, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, name.length, true);
+      cv.setUint16(30, 0, true);
+      cv.setUint16(32, 0, true);
+      cv.setUint16(34, 0, true);
+      cv.setUint16(36, 0, true);
+      cv.setUint32(38, 0, true);
+      cv.setUint32(42, offset, true);
+      cd.set(name, 46);
+      central.push(cd);
+      offset += local.length + data.length;
+    });
+    const cdSize = central.reduce((a, c) => a + c.length, 0);
+    const end = new Uint8Array(22);
+    const ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+    return new Blob([...chunks, ...central, end], { type: 'application/zip' });
+  }
+
+  async function zipSelected(ids) {
+    const items = state.items.filter((x) => ids.has(x.id));
+    if (!items.length) return;
+    const btn = $('#zip'); btn.disabled = true;
+    const files = [];
+    let done = 0;
+    const setProg = (p, t) => { $('#prog').style.width = p + '%'; $('#prog-t').textContent = `${done} / ${items.length}`; };
+    setProg(0);
+    for (const [i, it] of items.entries()) {
+      try {
+        const b = await fetchBlob(it.url);
+        const ab = new Uint8Array(await b.arrayBuffer());
+        files.push({ name: `${String(i + 1).padStart(3, '0')}-${filename(it.url, i)}`, data: ab });
+      } catch { /* skip unreachable */ }
+      done++;
+      setProg(Math.round((done / items.length) * 100));
+    }
+    if (!files.length) { toast('تعذّر تنزيل أي صورة (قيود CORS من المصدر)', 'err'); btn.disabled = false; return; }
+    const blob = makeZip(files);
+    saveBlob(blob, 'miswar-' + (state.query || 'images').replace(/\s+/g, '-').slice(0, 24) + '-' + Date.now() + '.zip');
+    toast(`تم تجهيز ZIP بـ ${files.length} صورة (${fmtBytes(blob.size)})`, 'ok', 4200);
+    btn.disabled = false;
+    $('#prog').style.width = '0%'; $('#prog-t').textContent = '0 / 0';
+  }
+
+  async function downloadSelected() {
+    const items = state.items.filter((x) => state.sel.has(x.id));
+    for (const [i, it] of items.entries()) await downloadOne(it, i);
+  }
+
+  /* ---------------- lightbox ---------------- */
+  function openLightbox(i) {
+    state.open = i;
+    const it = state.items[i];
+    if (!it) return;
+    $('#lb-img').src = it.url;
+    $('#lb-img').alt = it.title || 'صورة';
+    $('#lb-dl').href = it.url;
+    $('#lb-dl').download = filename(it.url, i);
+    $('#lb-lens').href = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(it.url);
+    $('#lb-tineye').href = 'https://tineye.com/search?url=' + encodeURIComponent(it.url);
+    $('#lb-meta').textContent = [it.source, it.width ? it.width + '×' + it.height : '', it.license || ''].filter(Boolean).join(' · ');
+    $('#lb').classList.add('open');
+    $('#lb-close').focus();
+  }
+  function closeLightbox() { $('#lb').classList.remove('open'); }
+
+  /* ---------------- history ---------------- */
+  function pushHistory(q) {
+    const h = store.get('hist', []);
+    const next = [q, ...h.filter((x) => x !== q)].slice(0, 12);
+    store.set('hist', next);
+    renderHistory();
+  }
+  function renderHistory() {
+    const h = store.get('hist', []);
+    $('#hist-box').hidden = h.length === 0;
+    $('#hist').innerHTML = h.map((q) => `<button class="hchip" data-q="${escapeAttr(q)}">${escapeHtml(q)}</button>`).join('');
+  }
+
+  /* ---------------- wire ---------------- */
+  $$('.src-chip input').forEach((i) => i.addEventListener('change', () => {
+    if (state.raw?.length) { state.items = applyFilters(state.raw); render(); $('#st-total').textContent = state.items.length; }
+  }));
+  $('#form').addEventListener('submit', (e) => { e.preventDefault(); runSearch($('#q').value); });
+  $('#presets').addEventListener('click', (e) => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    $('#q').value = b.dataset.q; runSearch(b.dataset.q);
+  });
+  ['minw', 'lic', 'sort', 'onlyx', 'safe', 'noai'].forEach((id) => {
+    $('#' + id).addEventListener('change', () => {
+      if (!state.items.length) return;
+      state.items = applyFilters(state.raw || state.items);
+      render();
+    });
+  });
+  $('#sel-all').addEventListener('click', () => {
+    state.items.forEach((x) => state.sel.add(x.id));
+    $$('.card').forEach((c) => c.classList.add('sel'));
+    $$('.pick').forEach((b) => (b.textContent = '✓'));
+    updateSelUI();
+  });
+  $('#clear-sel').addEventListener('click', () => {
+    state.sel.clear(); $$('.card').forEach((c) => c.classList.remove('sel'));
+    $$('.pick').forEach((b) => (b.textContent = '+'));
+    updateSelUI();
+  });
+  $('#sel-cancel').addEventListener('click', () => $('#clear-sel').click());
+  $('#zip').addEventListener('click', () => zipSelected(state.sel));
+  $('#zip-sel').addEventListener('click', () => zipSelected(state.sel));
+  $('#dl-sel').addEventListener('click', downloadSelected);
+  $('#lb-close').addEventListener('click', closeLightbox);
+  $('#lb').addEventListener('click', (e) => { if (e.target.id === 'lb') closeLightbox(); });
+  $('#lb-prev').addEventListener('click', () => openLightbox((state.open - 1 + state.items.length) % state.items.length));
+  $('#lb-next').addEventListener('click', () => openLightbox((state.open + 1) % state.items.length));
+  $('#lb-copy').addEventListener('click', () => {
+    navigator.clipboard?.writeText(state.items[state.open].url).then(() => toast('تم نسخ الرابط', 'ok'));
+  });
+  $('#hist').addEventListener('click', (e) => {
+    const b = e.target.closest('.hchip'); if (!b) return;
+    $('#q').value = b.dataset.q; runSearch(b.dataset.q);
+  });
+  document.addEventListener('keydown', (e) => {
+    const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    if (e.key === 'Escape') { closeLightbox(); if (state.sel.size) $('#clear-sel').click(); }
+    if ($('#lb').classList.contains('open')) {
+      if (e.key === 'ArrowLeft') $('#lb-next').click();
+      if (e.key === 'ArrowRight') $('#lb-prev').click();
+    }
+    if (!typing && (e.key === 'a' || e.key === 'A')) $('#sel-all').click();
+    if (!typing && e.key === 'Escape') $('#q').focus();
+  });
+  renderHistory();
+  $('#results').innerHTML = `<div class="empty"><div class="ico">◈</div><h3>ابدأ ببحث جديد</h3>
+    <p class="sub" style="margin-top:6px">اكتب كلمة البحث أو اختر أحد الاقتراحات أعلاه — النتائج تجمع من Openverse وWikimedia في وقت واحد.</p></div>`;
+  const params = new URLSearchParams(location.search);
+  if (params.get('q')) { $('#q').value = params.get('q'); runSearch(params.get('q')); }
+  else $('#q').focus();
+})();
+</script>
+<!-- abunawaf:begin — طبقة التعزيز © 2026 أبو نواف · MIT -->
+  <meta name="abunawaf:name" content="أداة تحميل الصور">
+  <meta name="abunawaf:tagline" content="البحث عن الصور وتحميلها مع الصور المشابهة">
+  <meta name="abunawaf:category" content="أدوات · صور">
+  <meta name="abunawaf:polish" content="0">
+  <meta name="abunawaf:engine" content="2.0.0">
+  <meta name="abunawaf:directory" content="0">
+  <script defer src="assets/abunawaf/abunawaf-enhance.js" data-abunawaf="2.0.0"></script>
+  <!-- abunawaf:end -->
+</body>
+</html>

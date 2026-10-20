@@ -1,0 +1,6 @@
+{
+  "name": "smart-image-downloader",
+  "private": true,
+  "type": "module",
+  "license": "MIT"
+}
